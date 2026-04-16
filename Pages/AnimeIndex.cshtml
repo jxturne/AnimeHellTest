@@ -1,0 +1,142 @@
+﻿@page
+@model AnimeHellTest.Pages.AnimeIndexModel
+@{
+    ViewData["Title"] = "My Anime Collection";
+}
+
+<div class="container my-4">
+    <h1>🎌 My Anime Collection</h1>
+    
+    <!-- Search Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Search MyAnimeList</h5>
+            <form method="get" class="row g-3">
+                <div class="col-md-10">
+                    <input type="text"
+                           name="searchQuery"
+                           value="@Model.SearchQuery"
+                           class="form-control"
+                           placeholder="Search for anime..." />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search Results -->
+    @if (!string.IsNullOrEmpty(Model.SearchQuery))
+    {
+        <div class="mb-5">
+            <h3>Search Results for "@Model.SearchQuery"</h3>
+            
+            @if (Model.SearchResults.Any())
+            {
+                <p class="text-muted">Found @Model.SearchResults.Count results</p>
+                <div class="row">
+                    @foreach (var anime in Model.SearchResults)
+                    {
+                        <div class="col-md-4 col-lg-3 mb-3">
+                            <div class="card h-100 shadow-sm">
+                                @if (!string.IsNullOrEmpty(anime.ImageUrl))
+                                {
+                                    <img src="@anime.ImageUrl" class="card-img-top" alt="@anime.Title" style="height: 300px; object-fit: cover;" />
+                                }
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">@anime.Title</h5>
+                                    <p class="card-text small text-muted flex-grow-1">
+                                        @(anime.Description?.Length > 100
+                                            ? anime.Description.Substring(0, 100) + "..."
+                                            : anime.Description ?? "No description available")
+                                    </p>
+                                    <div class="mt-2">
+                                        @if (!string.IsNullOrEmpty(anime.StudioName))
+                                        {
+                                            <p class="mb-1 medium"><strong>Studio:</strong> @anime.StudioName</p>
+                                        }
+                                        @if (anime.Episodes > 0)
+                                        {
+                                            <p class="mb-1 medium"><strong>Episodes:</strong> @anime.Episodes</p>
+                                        }
+                                        <span class="badge bg-@(anime.IsCompleted ? "success" : "warning")">
+                                            @(anime.IsCompleted ? "Completed" : "Ongoing")
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-white">
+                                    @if (Model.MyAnimes.Any(a => a.MalID == anime.MalID))
+                                    {
+                                        <button class="btn btn-secondary btn-sm w-100" disabled>
+                                            ✓ In Collection
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="Import">
+                                            <input type="hidden" name="malId" value="@anime.MalID" />
+                                            <button type="submit" class="btn btn-success btn-sm w-100">
+                                                ➕ Add to Collection
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    No results found for "@Model.SearchQuery". Try a different search term.
+                </div>
+            }
+        </div>
+        
+    }
+
+    <!-- My Collection -->
+    <div>
+        <h3>My Collection (@Model.MyAnimes.Count)</h3>
+        
+        @if (!Model.MyAnimes.Any())
+        {
+            <div class="alert alert-info">
+                Your collection is empty. Search for anime above to add some!
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var anime in Model.MyAnimes)
+                {
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">@anime.Title</h5>
+                                <p class="card-text small">@anime.Description?.Substring(0, Math.Min(100, anime.Description?.Length ?? 0))...</p>
+                                <p class="mb-1"><strong>Studio:</strong> @anime.StudioName</p>
+                                <p class="mb-1"><strong>Episodes:</strong> @anime.Episodes</p>
+                                <span class="badge bg-@(anime.IsCompleted ? "success" : "warning")">
+                                    @(anime.IsCompleted ? "✓ Completed" : "⏳ Ongoing")
+                                </span>
+                            </div>
+                            <div class="card-footer">
+                                <form method="post" asp-page-handler="Delete" class="d-inline">
+                                    <input type="hidden" name="id" value="@anime.ID" />
+                                    <button type="submit"
+                                            class="btn btn-danger btn-sm w-100"
+                                            onclick="return confirm('Remove @anime.Title from collection?')">
+                                        🗑️ Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

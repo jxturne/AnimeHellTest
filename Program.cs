@@ -1,6 +1,7 @@
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using JikanDotNet;
 
 
 namespace AnimeHellTest
@@ -18,6 +19,9 @@ namespace AnimeHellTest
             
 
             builder.Services.AddDbContext<Models.AnimeDB>();
+            builder.Services.AddScoped<Services.AnimeService>();
+            builder.Services.AddSingleton<IJikan>(new Jikan());
+            builder.Services.AddRazorPages();
             
 
             builder.Services.AddSwaggerGen();
@@ -37,12 +41,23 @@ namespace AnimeHellTest
                 
             }
 
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetService<Models.AnimeDB>();
+                //db.Database.EnsureDeleted();
+                db.Database.EnsureCreated();
+            }
+
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
 
 
             app.MapControllers();
+            //do i need to map controller?
+            app.MapRazorPages();
+
+            app.MapGet("/", () => Results.Redirect("/AnimeIndex"));// key redirection
 
             app.Run();
         }

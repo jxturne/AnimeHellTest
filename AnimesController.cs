@@ -6,28 +6,36 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using AnimeHellTest.Models;
+using AnimeHellTest.Services;
+using JikanDotNet;
+using Anime = AnimeHellTest.Models.Anime;
 
 namespace AnimeHellTest
 {
     [ApiController]
     [Route("api/[controller]")]
-
     public class AnimesController : ControllerBase
     {
         private readonly AnimeDB _context;
+        private readonly AnimeService _animeService;
+        private readonly IJikan _jikan;
 
-        public AnimesController(AnimeDB context)
+        public AnimesController(AnimeDB context, AnimeService animeService, IJikan jikan)
         {
             _context = context;
+            _animeService = animeService;
+            _jikan = jikan;
         }
 
-        // GET: Animes
+        // GET: api/Animes
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             return Ok(await _context.Animes.ToListAsync());
         }
 
-        // GET: Animes/Details/5
+        // GET: api/Animes/5
+        [HttpGet("{id}")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -45,61 +53,33 @@ namespace AnimeHellTest
             return Ok(anime);
         }
 
-        // GET: Animes/Create
-        public IActionResult Create()
-        {
-            return Ok();
-        }
-
-        // POST: Animes/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: api/Animes
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Title,Description,ID,StudioName,Episodes,Seasons,IsCompleted")] Anime anime)
+        public async Task<IActionResult> Create([FromBody] Anime anime)
         {
             if (ModelState.IsValid)
             {
                 _context.Add(anime);
                 await _context.SaveChangesAsync();
-                return Ok(anime);
+                return CreatedAtAction(nameof(Details), new { id = anime.ID }, anime);
             }
             return BadRequest(ModelState);
         }
 
-        // GET: Animes/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var anime = await _context.Animes.FindAsync(id);
-            if (anime == null)
-            {
-                return NotFound();
-            }
-            return Ok(anime);
-        }
-
-        // POST: Animes/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Title,Description,ID,StudioName,Episodes,Seasons,IsCompleted")] Anime anime)
+        // PUT: api/Animes/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Edit(int id, [FromBody] Anime anime)
         {
             if (id != anime.ID)
             {
-                return NotFound();
+                return BadRequest();
             }
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _context.Update(anime);
+                    _context.Update(anime); 
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
@@ -118,37 +98,20 @@ namespace AnimeHellTest
             return BadRequest(ModelState);
         }
 
-        // GET: Animes/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        // DELETE: api/Animes/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var anime = await _context.Animes
-                .FirstOrDefaultAsync(m => m.ID == id);
+            var anime = await _context.Animes.FindAsync(id);
             if (anime == null)
             {
                 return NotFound();
             }
 
-            return Ok(anime);
-        }
-
-        // POST: Animes/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var anime = await _context.Animes.FindAsync(id);
-            if (anime != null)
-            {
-                _context.Animes.Remove(anime);
-            }
-
+            _context.Animes.Remove(anime);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            
+            return NoContent();
         }
 
         private bool AnimeExists(int id)
