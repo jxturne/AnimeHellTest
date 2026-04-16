@@ -2,6 +2,8 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using JikanDotNet;
+using Microsoft.EntityFrameworkCore;
+
 
 
 namespace AnimeHellTest
@@ -57,7 +59,6 @@ namespace AnimeHellTest
             //do i need to map controller?
             app.MapRazorPages();
 
-            app.MapGet("/", () => Results.Redirect("/AnimeIndex"));// key redirection
 
             app.Run();
         }
